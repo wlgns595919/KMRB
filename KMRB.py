@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 KMRB 영화 등급 모니터링 시스템
-TARGET_COUNT와 비교하여 새로운 영화만 알림
+TARGET_COUNT 달성 시 자동 중단
 """
 
 import requests
@@ -13,7 +13,7 @@ from urllib.parse import urlencode
 class MovieMonitor:
     def __init__(self):
         # 설정값
-        self.TARGET_COUNT = self.load_target_count()  # 파일에서 읽기
+        self.TARGET_COUNT = 1  # 목표 숫자 (달성 시 중단)
         self.SEARCH_KEYWORD = "판타스틱 4"  # 검색할 영화명
         
         # 텔레그램 설정
@@ -41,23 +41,6 @@ class MovieMonitor:
             '15세이상관람가': '15세 관람가',
             '청소년관람불가': '19세 관람가'
         }
-    
-    def load_target_count(self):
-        """count.txt 파일에서 TARGET_COUNT 읽기"""
-        try:
-            with open('count.txt', 'r') as f:
-                return int(f.read().strip())
-        except:
-            return 1  # 기본값
-    
-    def save_target_count(self, count):
-        """count.txt 파일에 TARGET_COUNT 저장"""
-        try:
-            with open('count.txt', 'w') as f:
-                f.write(str(count))
-            self.log(f"TARGET_COUNT를 {count}으로 저장했습니다.")
-        except Exception as e:
-            self.log(f"파일 저장 오류: {e}")
     
     def get_movie_details(self):
         """KMRB 사이트에서 영화 상세 정보 추출"""
@@ -138,20 +121,14 @@ class MovieMonitor:
         }
         return f"{self.BASE_URL}?{urlencode(search_params)}"
     
-    def format_movie_message(self, movies, count):
-        """새로운 영화 정보를 텔레그램 메시지 형식으로 변환"""
+    def format_movie_message(self, movies):
+        """영화 정보를 텔레그램 메시지 형식으로 변환"""
         if not movies:
             return "영화 정보를 찾을 수 없습니다."
         
-        message = "🌐 <b>영등위 심의 완료</b>\n\n"
+        message = "🎬 <b>판타스틱 4 영등위 심의 완료!</b>\n\n"
         
-        # 차이값만큼 최신 영화만 전송
-        new_movie_count = count - self.TARGET_COUNT
-        new_movies = movies[:new_movie_count]  # 최신 영화부터
-        
-        self.log(f"새로운 영화 {new_movie_count}개 중 {len(new_movies)}개 전송")
-        
-        for movie in new_movies:
+        for movie in movies:
             # 영화 제목으로 검색 URL 생성
             search_url = self.create_search_url(movie['title'])
             
@@ -159,11 +136,6 @@ class MovieMonitor:
             message += f"<a href=\"{search_url}\">{movie['title']} ({movie['grade']})</a>\n"
         
         return message
-    
-    def update_target_count(self, new_count):
-        """TARGET_COUNT 업데이트 (파일 저장 방식)"""
-        self.save_target_count(new_count)
-        self.TARGET_COUNT = new_count
     
     def send_telegram(self, message):
         """텔레그램 메시지 전송"""
@@ -190,39 +162,45 @@ class MovieMonitor:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"[{timestamp}] {message}")
     
-    def monitor(self):
-        """모니터링 실행"""
-        self.log("영화 등급 모니터링 시작")
-        self.log(f"현재 TARGET_COUNT: {self.TARGET_COUNT}")
+    def run_continuous_monitor(self):
+        """1분마다 지속적으로 모니터링, 목표 달성 시 중단"""
+        self.log(f"KMRB 모니터링 시작 - 목표: {self.TARGET_COUNT}개 이상")
         
-        # 현재 영화 정보 확인
-        current_count, movies = self.get_movie_details()
-        if current_count is None:
-            self.log("영화 정보 확인 실패")
-            return
-        
-        # TARGET_COUNT와 비교
-        if current_count > self.TARGET_COUNT:
-            self.log(f"새로운 영화 발견: {current_count} > {self.TARGET_COUNT}")
-            
-            # 새로운 영화 알림 전송 (차이값만큼만)
-            message = self.format_movie_message(movies, current_count)
-            self.send_telegram(message)
-            
-            # TARGET_COUNT 업데이트
-            self.update_target_count(current_count)
-            
-        elif current_count < self.TARGET_COUNT:
-            self.log(f"영화 개수 감소: {current_count} < {self.TARGET_COUNT}")
-            # 감소한 경우에도 TARGET_COUNT 업데이트
-            self.update_target_count(current_count)
-            
-        else:
-            self.log("영화 개수 변경 없음")
+        while True:
+            try:
+                # 현재 영화 정보 확인
+                current_count, movies = self.get_movie_details()
+                if current_count is None:
+                    self.log("영화 정보 확인 실패 - 1분 후 재시도")
+                    time.sleep(60)
+                    continue
+                
+                # 목표 달성 확인
+                if current_count >= self.TARGET_COUNT:
+                    self.log(f"🎉 목표 달성! 영화 개수: {current_count} >= {self.TARGET_COUNT}")
+                    
+                    # 텔레그램 알림 전송
+                    message = self.format_movie_message(movies)
+                    self.send_telegram(message)
+                    
+                    self.log("모니터링 완료 - 프로그램 종료")
+                    break
+                else:
+                    self.log(f"목표 미달성: {current_count} < {self.TARGET_COUNT} - 1분 후 재시도")
+                
+                # 1분 대기
+                time.sleep(60)
+                
+            except KeyboardInterrupt:
+                self.log("모니터링 중단됨")
+                break
+            except Exception as e:
+                self.log(f"예상치 못한 오류: {e} - 1분 후 재시도")
+                time.sleep(60)
 
 def main():
     monitor = MovieMonitor()
-    monitor.monitor()
+    monitor.run_continuous_monitor()
 
 if __name__ == "__main__":
     main()
