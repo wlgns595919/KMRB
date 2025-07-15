@@ -148,6 +148,26 @@ class MovieMonitor:
         
         return message
     
+    def format_start_message(self, movies, count):
+        """모니터링 시작 시 초기 상태 텔레그램 메시지 생성"""
+        if not movies:
+            return "영화 정보를 찾을 수 없습니다."
+        
+        message = f"🚀 <b>{self.SEARCH_KEYWORD} 모니터링 시작!</b>\n\n"
+        message += f"📊 현재 총 <b>{count}개</b> 영화 심의 완료\n\n"
+        
+        # 모든 영화 목록 표시
+        for i, movie in enumerate(movies, 1):
+            # 영화 제목으로 검색 URL 생성
+            search_url = self.create_search_url(movie['title'])
+            
+            # 영화 제목과 등급을 하이퍼링크로 구성
+            message += f"{i}. <a href=\"{search_url}\">{movie['title']} ({movie['grade']})</a>\n"
+        
+        message += f"\n🔍 변화 감지 시 알림을 보내드립니다."
+        
+        return message
+    
     def send_telegram(self, message):
         """텔레그램 메시지 전송"""
         try:
@@ -178,13 +198,17 @@ class MovieMonitor:
         self.log("KMRB 모니터링 시작 - 초기 개수 확인 중...")
         
         # 초기 개수 설정
-        initial_count, _ = self.get_movie_details()
+        initial_count, initial_movies = self.get_movie_details()
         if initial_count is None:
             self.log("초기 영화 정보 확인 실패 - 프로그램 종료")
             return
         
         self.TARGET_COUNT = initial_count
         self.log(f"초기 영화 개수: {self.TARGET_COUNT}개로 설정")
+        
+        # 초기 상태 텔레그램 메시지 전송
+        start_message = self.format_start_message(initial_movies, initial_count)
+        self.send_telegram(start_message)
         
         while True:
             try:
