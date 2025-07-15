@@ -183,8 +183,11 @@ class MovieMonitor:
                     message = self.format_movie_message(movies)
                     self.send_telegram(message)
                     
-                    self.log("모니터링 완료 - 프로그램 종료")
-                    break
+                    self.log("모니터링 완료 - 대기 모드로 전환")
+                    # 목표 달성 후 무한 대기 (Render 재시작 방지)
+                    while True:
+                        self.log("목표 달성 완료 - 대기 중...")
+                        time.sleep(3600)  # 1시간마다 상태 출력
                 else:
                     self.log(f"목표 미달성: {current_count} < {self.TARGET_COUNT} - 1분 후 재시도")
                 
