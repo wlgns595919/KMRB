@@ -100,7 +100,8 @@ class MovieMonitor:
                 })
             
             self.log(f"추출된 영화 정보: {len(movies)}개")
-            return count, movies
+            # 실제 파싱된 영화 개수를 반환 (HTML 파싱과 실제 개수가 다를 수 있음)
+            return len(movies), movies
             
         except requests.RequestException as e:
             self.log(f"네트워크 오류: {e}")
@@ -153,8 +154,8 @@ class MovieMonitor:
         if not movies:
             return "영화 정보를 찾을 수 없습니다."
         
-        message = f"🚀 <b>{self.SEARCH_KEYWORD} 모니터링 시작!</b>\n\n"
-        message += f"📊 현재 총 <b>{count}개</b> 영화 심의 완료\n\n"
+        message = f"[<b>{self.SEARCH_KEYWORD}</b>] 모니터링 시작\n"
+        message += f"현재 총 <b>{count}개</b>\n\n"
         
         # 모든 영화 목록 표시
         for i, movie in enumerate(movies, 1):
