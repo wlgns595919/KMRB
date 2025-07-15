@@ -124,13 +124,20 @@ class MovieMonitor:
         }
         return f"{self.BASE_URL}?{urlencode(search_params)}"
     
-    def format_movie_message(self, movies, current_count):
+    def format_movie_message(self, movies, current_count, is_change=True):
         """영화 정보를 텔레그램 메시지 형식으로 변환"""
         if not movies:
             return "영화 정보를 찾을 수 없습니다."
         
-        message = f"🎬 <b>판타스틱 4 영등위 심의 현황</b>\n\n"
-        message += f"📊 <b>총 {current_count}개 영화</b>\n\n"
+        # 변화 여부에 따라 다른 헤더
+        if is_change:
+            message = f"🎉 <b>판타스틱 4 영등위 심의 변화 감지!</b>\n\n"
+            message += f"📊 <b>총 {current_count}개 영화</b>\n\n"
+        else:
+            current_time = datetime.now().strftime("%H:%M")
+            message = f"🔍 <b>판타스틱 4 모니터링 상황</b>\n\n"
+            message += f"⏰ 체크 시간: {current_time}\n"
+            message += f"📊 현재 {current_count}개 영화 (변화 없음)\n\n"
         
         # 모든 영화 목록 표시
         for i, movie in enumerate(movies, 1):
@@ -194,7 +201,7 @@ class MovieMonitor:
                     self.log(f"🎉 영화 개수 변화 감지! {self.TARGET_COUNT} → {current_count}")
                     
                     # 변화된 영화 정보 텔레그램 알림 전송
-                    message = self.format_movie_message(movies, current_count)
+                    message = self.format_movie_message(movies, current_count, is_change=True)
                     self.send_telegram(message)
                     
                     # TARGET_COUNT 업데이트
@@ -202,6 +209,10 @@ class MovieMonitor:
                     self.log(f"기준 개수를 {self.TARGET_COUNT}개로 업데이트")
                 else:
                     self.log(f"변화 없음: {current_count}개 - 1분 후 재시도")
+                    
+                    # 변화 없어도 현재 상황 텔레그램 전송 (동작 확인용)
+                    message = self.format_movie_message(movies, current_count, is_change=False)
+                    self.send_telegram(message)
                 
                 # 1분 대기
                 time.sleep(60)
