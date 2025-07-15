@@ -192,11 +192,9 @@ class MovieMonitor:
                     message = self.format_movie_message(movies, current_count)
                     self.send_telegram(message)
                     
-                    self.log("알림 전송 완료 - 대기 모드로 전환")
-                    # 알림 전송 후 무한 대기 (Render 재시작 방지)
-                    while True:
-                        self.log("알림 전송 완료 - 대기 중...")
-                        time.sleep(3600)  # 1시간마다 상태 출력
+                    # TARGET_COUNT 업데이트하여 다음 변화 감지 준비
+                    self.TARGET_COUNT = current_count
+                    self.log(f"알림 전송 완료 - TARGET_COUNT를 {self.TARGET_COUNT}로 업데이트")
                 elif current_count == self.TARGET_COUNT:
                     self.log(f"변경 없음: {current_count} = {self.TARGET_COUNT} - 1분 후 재시도")
                 else:
