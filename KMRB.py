@@ -13,7 +13,7 @@ from urllib.parse import urlencode
 class MovieMonitor:
     def __init__(self):
         # 설정값
-        self.TARGET_COUNT = 1  # 기준 숫자 (여기서 변경)
+        self.TARGET_COUNT = self.load_target_count()  # 파일에서 읽기
         self.SEARCH_KEYWORD = "판타스틱 4"  # 검색할 영화명
         
         # 텔레그램 설정
@@ -41,6 +41,23 @@ class MovieMonitor:
             '15세이상관람가': '15세 관람가',
             '청소년관람불가': '19세 관람가'
         }
+    
+    def load_target_count(self):
+        """count.txt 파일에서 TARGET_COUNT 읽기"""
+        try:
+            with open('count.txt', 'r') as f:
+                return int(f.read().strip())
+        except:
+            return 1  # 기본값
+    
+    def save_target_count(self, count):
+        """count.txt 파일에 TARGET_COUNT 저장"""
+        try:
+            with open('count.txt', 'w') as f:
+                f.write(str(count))
+            self.log(f"TARGET_COUNT를 {count}으로 저장했습니다.")
+        except Exception as e:
+            self.log(f"파일 저장 오류: {e}")
     
     def get_movie_details(self):
         """KMRB 사이트에서 영화 상세 정보 추출"""
@@ -144,25 +161,9 @@ class MovieMonitor:
         return message
     
     def update_target_count(self, new_count):
-        """KMRB.py 파일의 TARGET_COUNT 업데이트"""
-        try:
-            # 현재 파일 읽기
-            with open(__file__, 'r', encoding='utf-8') as f:
-                content = f.read()
-            
-            # TARGET_COUNT 값 업데이트
-            pattern = r'self\.TARGET_COUNT = \d+'
-            replacement = f'self.TARGET_COUNT = {new_count}'
-            new_content = re.sub(pattern, replacement, content)
-            
-            # 파일 쓰기
-            with open(__file__, 'w', encoding='utf-8') as f:
-                f.write(new_content)
-            
-            self.log(f"TARGET_COUNT를 {new_count}으로 업데이트했습니다.")
-            
-        except Exception as e:
-            self.log(f"파일 업데이트 오류: {e}")
+        """TARGET_COUNT 업데이트 (파일 저장 방식)"""
+        self.save_target_count(new_count)
+        self.TARGET_COUNT = new_count
     
     def send_telegram(self, message):
         """텔레그램 메시지 전송"""
