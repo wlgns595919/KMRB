@@ -60,7 +60,7 @@ class MovieMonitor:
             response = requests.get(url, headers=headers, timeout=10)
             response.raise_for_status()
             
-            # HTML에서 영화 개수 추출
+            # HTML에서 실제 영화 개수 추출 (페이지네이션 고려)
             count_pattern = r'<span[^>]*class="text"[^>]*>영화\((\d+)\)</span>'
             count_match = re.search(count_pattern, response.text)
             
@@ -94,9 +94,9 @@ class MovieMonitor:
                     'rcv_no': rcv_no
                 })
             
-            self.log(f"추출된 영화 정보: {len(movies)}개")
-            # 실제 파싱된 영화 개수를 반환 (HTML 파싱과 실제 개수가 다를 수 있음)
-            return len(movies), movies
+            self.log(f"HTML에서 추출된 총 개수: {count}개, 파싱된 영화: {len(movies)}개")
+            # HTML에서 추출한 실제 개수를 반환 (페이지네이션 고려)
+            return count, movies
             
         except requests.RequestException as e:
             self.log(f"네트워크 오류: {e}")
@@ -140,19 +140,12 @@ class MovieMonitor:
     
     def format_start_message(self, movies, count):
         """모니터링 시작 시 초기 상태 텔레그램 메시지 생성"""
-        if not movies:
-            return "영화 정보를 찾을 수 없습니다."
-        
-        message = f"<b>🌐 {self.SEARCH_KEYWORD} 모니터링 시작 ({count}개)</b>\n\n"
-        
         # 간단한 키워드 URL 생성
         simple_url = self.create_simple_url()
         
-        # 모든 영화 목록 표시
-        for i, movie in enumerate(movies, 1):
-            message += f"{i}. <a href=\"{simple_url}\">{movie['title']} ({movie['grade']})</a>\n"
-        
-        message += f"\n🔍 변화 감지 시 알림을 보내드립니다."
+        # 간소화된 시작 메시지 (영화 목록 제거)
+        message = f"<b>🌐 {self.SEARCH_KEYWORD} 모니터링 시작 </b>"
+        message += f"<b><a href=\"{simple_url}\">({count}개)</a></b>"
         
         return message
     
