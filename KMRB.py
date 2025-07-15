@@ -16,7 +16,7 @@ from flask import Flask
 class MovieMonitor:
     def __init__(self):
         # 설정값
-        self.TARGET_COUNT = 3  # 목표 숫자 (달성 시 중단)
+        self.TARGET_COUNT = None  # 초기 실행 시 웹사이트에서 가져올 예정
         self.SEARCH_KEYWORD = "판타스틱 4"  # 검색할 영화명
         
         # 텔레그램 설정
@@ -125,24 +125,20 @@ class MovieMonitor:
         return f"{self.BASE_URL}?{urlencode(search_params)}"
     
     def format_movie_message(self, movies, current_count):
-        """새로운 영화 정보만 텔레그램 메시지 형식으로 변환"""
+        """영화 정보를 텔레그램 메시지 형식으로 변환"""
         if not movies:
             return "영화 정보를 찾을 수 없습니다."
         
-        message = "🎬 <b>판타스틱 4 영등위 심의 완료!</b>\n\n"
+        message = f"🎬 <b>판타스틱 4 영등위 심의 현황</b>\n\n"
+        message += f"📊 <b>총 {current_count}개 영화</b>\n\n"
         
-        # 차이값만큼 최신 영화만 전송
-        new_movie_count = current_count - self.TARGET_COUNT
-        new_movies = movies[:new_movie_count]  # 최신 영화부터
-        
-        self.log(f"새로운 영화 {new_movie_count}개 중 {len(new_movies)}개 전송")
-        
-        for movie in new_movies:
+        # 모든 영화 목록 표시
+        for i, movie in enumerate(movies, 1):
             # 영화 제목으로 검색 URL 생성
             search_url = self.create_search_url(movie['title'])
             
             # 영화 제목과 등급을 하이퍼링크로 구성
-            message += f"<a href=\"{search_url}\">{movie['title']} ({movie['grade']})</a>\n"
+            message += f"{i}. <a href=\"{search_url}\">{movie['title']} ({movie['grade']})</a>\n"
         
         return message
     
@@ -172,8 +168,17 @@ class MovieMonitor:
         print(f"[{timestamp}] {message}")
     
     def run_continuous_monitor(self):
-        """1분마다 지속적으로 모니터링, 목표 달성 시 중단"""
-        self.log(f"KMRB 모니터링 시작 - 목표: {self.TARGET_COUNT}개 이상")
+        """1분마다 지속적으로 모니터링, 개수 변화 감지 시 알림"""
+        self.log("KMRB 모니터링 시작 - 초기 개수 확인 중...")
+        
+        # 초기 개수 설정
+        initial_count, _ = self.get_movie_details()
+        if initial_count is None:
+            self.log("초기 영화 정보 확인 실패 - 프로그램 종료")
+            return
+        
+        self.TARGET_COUNT = initial_count
+        self.log(f"초기 영화 개수: {self.TARGET_COUNT}개로 설정")
         
         while True:
             try:
@@ -184,17 +189,19 @@ class MovieMonitor:
                     time.sleep(60)
                     continue
                 
-                # TARGET_COUNT 이상이면 항상 텔레그램 메시지 전송
-                if current_count >= self.TARGET_COUNT:
-                    self.log(f"🎬 영화 정보 전송: {current_count}개 (>= {self.TARGET_COUNT})")
+                # 개수 변화 확인
+                if current_count != self.TARGET_COUNT:
+                    self.log(f"🎉 영화 개수 변화 감지! {self.TARGET_COUNT} → {current_count}")
                     
-                    # 차이값만큼 텔레그램 알림 전송
+                    # 변화된 영화 정보 텔레그램 알림 전송
                     message = self.format_movie_message(movies, current_count)
                     self.send_telegram(message)
                     
-                    self.log("텔레그램 알림 전송 완료 - 1분 후 재시도")
+                    # TARGET_COUNT 업데이트
+                    self.TARGET_COUNT = current_count
+                    self.log(f"기준 개수를 {self.TARGET_COUNT}개로 업데이트")
                 else:
-                    self.log(f"목표 미달성: {current_count} < {self.TARGET_COUNT} - 1분 후 재시도")
+                    self.log(f"변화 없음: {current_count}개 - 1분 후 재시도")
                 
                 # 1분 대기
                 time.sleep(60)
