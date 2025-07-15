@@ -75,11 +75,11 @@ def run_scheduler():
 if __name__ == "__main__":
     import threading
     
-    # 스케줄러를 별도 스레드에서 실행
-    scheduler_thread = threading.Thread(target=run_scheduler)
-    scheduler_thread.daemon = True
-    scheduler_thread.start()
-    
-    # Flask 웹 서버 실행 (Render에서 요구)
+    # Flask 웹 서버를 별도 스레드에서 실행
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    flask_thread = threading.Thread(target=lambda: app.run(host="0.0.0.0", port=port))
+    flask_thread.daemon = True
+    flask_thread.start()
+    
+    # 메인 스레드에서 스케줄러 실행
+    run_scheduler()
