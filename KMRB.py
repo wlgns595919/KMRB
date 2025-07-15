@@ -7,8 +7,11 @@ TARGET_COUNT 달성 시 자동 중단
 import requests
 import re
 import time
+import os
+import threading
 from datetime import datetime
 from urllib.parse import urlencode
+from flask import Flask
 
 class MovieMonitor:
     def __init__(self):
@@ -209,9 +212,30 @@ class MovieMonitor:
                 self.log(f"예상치 못한 오류: {e} - 1분 후 재시도")
                 time.sleep(60)
 
-def main():
+# Flask 웹 서버 설정 (Render 포트 바인딩용)
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "KMRB 영화 모니터링 시스템이 실행 중입니다."
+
+@app.route('/status')
+def status():
+    return "모니터링 활성화"
+
+def run_monitor():
+    """백그라운드에서 영화 모니터링 실행"""
     monitor = MovieMonitor()
     monitor.run_continuous_monitor()
+
+def main():
+    # 백그라운드 스레드에서 모니터링 실행
+    monitor_thread = threading.Thread(target=run_monitor, daemon=True)
+    monitor_thread.start()
+    
+    # Flask 웹 서버 실행 (Render 포트 바인딩용)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
 
 if __name__ == "__main__":
     main()
