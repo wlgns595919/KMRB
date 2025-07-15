@@ -17,7 +17,7 @@ class MovieMonitor:
     def __init__(self):
         # 설정값
         self.TARGET_COUNT = None  # 초기 실행 시 웹사이트에서 가져올 예정
-        self.SEARCH_KEYWORD = "판타스틱 4"  # 검색할 영화명
+        self.SEARCH_KEYWORD = "데드풀"  # 검색할 영화명
         
         # 텔레그램 설정
         self.TELEGRAM_TOKEN = "7787965493:AAEeHQIi61sUVPFjjcAWFzsQWc2WQnfUAk0"
