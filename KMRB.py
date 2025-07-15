@@ -181,25 +181,21 @@ class MovieMonitor:
                     time.sleep(60)
                     continue
                 
-                # 목표 달성 확인
-                if current_count >= self.TARGET_COUNT:
-                    self.log(f"🎉 목표 달성! 영화 개수: {current_count} >= {self.TARGET_COUNT}")
+                # 새로운 영화 추가 확인
+                if current_count > self.TARGET_COUNT:
+                    self.log(f"🎉 새로운 영화 발견! 영화 개수: {current_count} > {self.TARGET_COUNT}")
                     
-                    # 차이값 계산
-                    new_movie_count = current_count - self.TARGET_COUNT
+                    # 차이값만큼 텔레그램 알림 전송
+                    message = self.format_movie_message(movies, current_count)
+                    self.send_telegram(message)
                     
-                    # 차이값이 0보다 클 때만 텔레그램 알림 전송
-                    if new_movie_count > 0:
-                        message = self.format_movie_message(movies, current_count)
-                        self.send_telegram(message)
-                    else:
-                        self.log("차이값이 0이므로 알림 전송하지 않음")
-                    
-                    self.log("모니터링 완료 - 대기 모드로 전환")
-                    # 목표 달성 후 무한 대기 (Render 재시작 방지)
+                    self.log("알림 전송 완료 - 대기 모드로 전환")
+                    # 알림 전송 후 무한 대기 (Render 재시작 방지)
                     while True:
-                        self.log("목표 달성 완료 - 대기 중...")
+                        self.log("알림 전송 완료 - 대기 중...")
                         time.sleep(3600)  # 1시간마다 상태 출력
+                elif current_count == self.TARGET_COUNT:
+                    self.log(f"변경 없음: {current_count} = {self.TARGET_COUNT} - 1분 후 재시도")
                 else:
                     self.log(f"목표 미달성: {current_count} < {self.TARGET_COUNT} - 1분 후 재시도")
                 
