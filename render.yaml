@@ -1,5 +1,5 @@
 services:
-  - type: web
+  - type: background_worker
     name: kmrb-monitor
     env: python
     buildCommand: pip install -r requirements.txt
