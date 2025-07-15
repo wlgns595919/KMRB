@@ -16,7 +16,7 @@ from flask import Flask
 class MovieMonitor:
     def __init__(self):
         # 설정값
-        self.TARGET_COUNT = 2  # 목표 숫자 (달성 시 중단)
+        self.TARGET_COUNT = 3  # 목표 숫자 (달성 시 중단)
         self.SEARCH_KEYWORD = "판타스틱 4"  # 검색할 영화명
         
         # 텔레그램 설정
