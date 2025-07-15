@@ -125,6 +125,21 @@ class MovieMonitor:
         }
         return f"{self.BASE_URL}?{urlencode(search_params)}"
     
+    def create_keyword_url(self):
+        """키워드 기반 검색 URL 생성"""
+        keyword_params = {
+            'mCode': 'MN132',
+            'site_code': '',
+            'category_code': 'ORS',
+            'category_code2': 'MV',
+            'category_code3': '',
+            'grade_name': '',
+            'rcv_no': '',
+            'return_url': '',
+            'searchKeyword': self.SEARCH_KEYWORD
+        }
+        return f"{self.BASE_URL}?{urlencode(keyword_params)}"
+    
     def format_movie_message(self, movies, current_count, previous_count):
         """새로 추가된 영화만 텔레그램 메시지 형식으로 변환"""
         if not movies:
@@ -133,7 +148,10 @@ class MovieMonitor:
         # 새로 추가된 영화 개수 계산
         new_movie_count = current_count - previous_count
         
-        message = f"🎬 <b>{self.SEARCH_KEYWORD} 영등위 심의 완료!</b>\n\n"
+        message = f"🌐 영등위 심의 완료\n\n"
+        
+        # 키워드 기반 통일 URL 생성
+        keyword_url = self.create_keyword_url()
         
         # 새로 추가된 영화만 표시 (최신순으로 정렬되어 있으므로 처음부터 new_movie_count개)
         new_movies = movies[:new_movie_count]
@@ -141,11 +159,8 @@ class MovieMonitor:
         self.log(f"새로운 영화 {new_movie_count}개 전송")
         
         for movie in new_movies:
-            # 영화 제목으로 검색 URL 생성
-            search_url = self.create_search_url(movie['title'])
-            
             # 영화 제목과 등급을 하이퍼링크로 구성
-            message += f"<a href=\"{search_url}\">{movie['title']} ({movie['grade']})</a>\n"
+            message += f"<a href=\"{keyword_url}\">{movie['title']} ({movie['grade']})</a>\n"
         
         return message
     
@@ -154,16 +169,14 @@ class MovieMonitor:
         if not movies:
             return "영화 정보를 찾을 수 없습니다."
         
-        message = f"[<b>{self.SEARCH_KEYWORD}</b>] 모니터링 시작\n"
-        message += f"현재 총 <b>{count}개</b>\n\n"
+        message = f"<b>🌐 {self.SEARCH_KEYWORD} 모니터링 시작 ({count}개)</b>\n\n"
+        
+        # 키워드 기반 통일 URL 생성
+        keyword_url = self.create_keyword_url()
         
         # 모든 영화 목록 표시
         for i, movie in enumerate(movies, 1):
-            # 영화 제목으로 검색 URL 생성
-            search_url = self.create_search_url(movie['title'])
-            
-            # 영화 제목과 등급을 하이퍼링크로 구성
-            message += f"{i}. <a href=\"{search_url}\">{movie['title']} ({movie['grade']})</a>\n"
+            message += f"{i}. <a href=\"{keyword_url}\">{movie['title']} ({movie['grade']})</a>\n"
         
         message += f"\n🔍 변화 감지 시 알림을 보내드립니다."
         
