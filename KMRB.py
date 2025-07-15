@@ -185,9 +185,15 @@ class MovieMonitor:
                 if current_count >= self.TARGET_COUNT:
                     self.log(f"🎉 목표 달성! 영화 개수: {current_count} >= {self.TARGET_COUNT}")
                     
-                    # 텔레그램 알림 전송 (차이값만큼만)
-                    message = self.format_movie_message(movies, current_count)
-                    self.send_telegram(message)
+                    # 차이값 계산
+                    new_movie_count = current_count - self.TARGET_COUNT
+                    
+                    # 차이값이 0보다 클 때만 텔레그램 알림 전송
+                    if new_movie_count > 0:
+                        message = self.format_movie_message(movies, current_count)
+                        self.send_telegram(message)
+                    else:
+                        self.log("차이값이 0이므로 알림 전송하지 않음")
                     
                     self.log("모니터링 완료 - 대기 모드로 전환")
                     # 목표 달성 후 무한 대기 (Render 재시작 방지)
