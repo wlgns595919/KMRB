@@ -25,17 +25,6 @@ class MovieMonitor:
         
         # KMRB 사이트 설정
         self.BASE_URL = "https://www.kmrb.or.kr/kor/CMS/TotalSearch/search.do"
-        self.PARAMS = {
-            'mCode': 'MN132',
-            'site_code': '',
-            'category_code': 'ORS',
-            'category_code2': 'MV',
-            'category_code3': '',
-            'grade_name': '',
-            'rcv_no': '',
-            'return_url': '',
-            'searchKeyword': self.SEARCH_KEYWORD
-        }
         
         # 등급 매핑
         self.GRADE_MAP = {
@@ -48,8 +37,14 @@ class MovieMonitor:
     def get_movie_details(self):
         """KMRB 사이트에서 영화 상세 정보 추출"""
         try:
-            # URL 생성
-            url = f"{self.BASE_URL}?{urlencode(self.PARAMS)}"
+            # URL 생성 (데이터 추출용)
+            params = {
+                'mCode': 'MN132',
+                'category_code': 'ORS',
+                'category_code2': 'MV',
+                'searchKeyword': self.SEARCH_KEYWORD
+            }
+            url = f"{self.BASE_URL}?{urlencode(params)}"
             
             # 헤더 설정
             headers = {
@@ -110,35 +105,14 @@ class MovieMonitor:
             self.log(f"오류 발생: {e}")
             return None, []
     
-    def create_search_url(self, title):
-        """영화 제목으로 검색 URL 생성"""
-        search_params = {
+    def create_simple_url(self):
+        """간단한 키워드 검색 URL 생성"""
+        params = {
             'mCode': 'MN132',
-            'site_code': '',
             'category_code': 'ORS',
-            'category_code2': 'MV',
-            'category_code3': '',
-            'grade_name': '',
-            'rcv_no': '',
-            'return_url': '',
-            'searchKeyword': title
-        }
-        return f"{self.BASE_URL}?{urlencode(search_params)}"
-    
-    def create_keyword_url(self):
-        """키워드 기반 검색 URL 생성"""
-        keyword_params = {
-            'mCode': 'MN132',
-            'site_code': '',
-            'category_code': 'ORS',
-            'category_code2': 'MV',
-            'category_code3': '',
-            'grade_name': '',
-            'rcv_no': '',
-            'return_url': '',
             'searchKeyword': self.SEARCH_KEYWORD
         }
-        return f"{self.BASE_URL}?{urlencode(keyword_params)}"
+        return f"{self.BASE_URL}?{urlencode(params)}"
     
     def format_movie_message(self, movies, current_count, previous_count):
         """새로 추가된 영화만 텔레그램 메시지 형식으로 변환"""
@@ -150,8 +124,8 @@ class MovieMonitor:
         
         message = f"🌐 영등위 심의 완료\n\n"
         
-        # 키워드 기반 통일 URL 생성
-        keyword_url = self.create_keyword_url()
+        # 간단한 키워드 URL 생성
+        simple_url = self.create_simple_url()
         
         # 새로 추가된 영화만 표시 (최신순으로 정렬되어 있으므로 처음부터 new_movie_count개)
         new_movies = movies[:new_movie_count]
@@ -160,7 +134,7 @@ class MovieMonitor:
         
         for movie in new_movies:
             # 영화 제목과 등급을 하이퍼링크로 구성
-            message += f"<a href=\"{keyword_url}\">{movie['title']} ({movie['grade']})</a>\n"
+            message += f"<a href=\"{simple_url}\">{movie['title']} ({movie['grade']})</a>\n"
         
         return message
     
@@ -171,12 +145,12 @@ class MovieMonitor:
         
         message = f"<b>🌐 {self.SEARCH_KEYWORD} 모니터링 시작 ({count}개)</b>\n\n"
         
-        # 키워드 기반 통일 URL 생성
-        keyword_url = self.create_keyword_url()
+        # 간단한 키워드 URL 생성
+        simple_url = self.create_simple_url()
         
         # 모든 영화 목록 표시
         for i, movie in enumerate(movies, 1):
-            message += f"{i}. <a href=\"{keyword_url}\">{movie['title']} ({movie['grade']})</a>\n"
+            message += f"{i}. <a href=\"{simple_url}\">{movie['title']} ({movie['grade']})</a>\n"
         
         message += f"\n🔍 변화 감지 시 알림을 보내드립니다."
         
