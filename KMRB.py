@@ -121,14 +121,20 @@ class MovieMonitor:
         }
         return f"{self.BASE_URL}?{urlencode(search_params)}"
     
-    def format_movie_message(self, movies):
-        """영화 정보를 텔레그램 메시지 형식으로 변환"""
+    def format_movie_message(self, movies, current_count):
+        """새로운 영화 정보만 텔레그램 메시지 형식으로 변환"""
         if not movies:
             return "영화 정보를 찾을 수 없습니다."
         
         message = "🎬 <b>판타스틱 4 영등위 심의 완료!</b>\n\n"
         
-        for movie in movies:
+        # 차이값만큼 최신 영화만 전송
+        new_movie_count = current_count - self.TARGET_COUNT
+        new_movies = movies[:new_movie_count]  # 최신 영화부터
+        
+        self.log(f"새로운 영화 {new_movie_count}개 중 {len(new_movies)}개 전송")
+        
+        for movie in new_movies:
             # 영화 제목으로 검색 URL 생성
             search_url = self.create_search_url(movie['title'])
             
@@ -179,8 +185,8 @@ class MovieMonitor:
                 if current_count >= self.TARGET_COUNT:
                     self.log(f"🎉 목표 달성! 영화 개수: {current_count} >= {self.TARGET_COUNT}")
                     
-                    # 텔레그램 알림 전송
-                    message = self.format_movie_message(movies)
+                    # 텔레그램 알림 전송 (차이값만큼만)
+                    message = self.format_movie_message(movies, current_count)
                     self.send_telegram(message)
                     
                     self.log("모니터링 완료 - 대기 모드로 전환")
