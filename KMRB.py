@@ -149,10 +149,6 @@ class MovieMonitor:
         
         return message
     
-    def format_status_message(self, count):
-        """1분마다 전송할 간단한 상태 메시지"""
-        current_time = datetime.now().strftime("%H:%M")
-        return f"✅ {current_time} - {self.SEARCH_KEYWORD} ({count}개)"
     
     def send_telegram(self, message):
         """텔레그램 메시지 전송"""
@@ -218,10 +214,6 @@ class MovieMonitor:
                     self.log(f"기준 개수를 {self.TARGET_COUNT}개로 업데이트")
                 else:
                     self.log(f"변화 없음: {current_count}개 - 1분 후 재시도")
-                    
-                    # 변화 없어도 상태 확인용 메시지 전송 (Render 슬립 테스트)
-                    status_message = self.format_status_message(current_count)
-                    self.send_telegram(status_message)
                 
                 # 1분 대기
                 time.sleep(60)
