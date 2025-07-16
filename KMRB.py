@@ -173,7 +173,7 @@ class MovieMonitor:
     def log(self, message):
         """로그 출력"""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"[{timestamp}] {message}")
+        print(f"[{timestamp}] {message}", flush=True)
     
     def run_continuous_monitor(self):
         """1분마다 지속적으로 모니터링, 개수 변화 감지 시 알림"""
