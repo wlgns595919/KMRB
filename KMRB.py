@@ -69,7 +69,6 @@ class MovieMonitor:
                 return None, []
             
             count = int(count_match.group(1))
-            self.log(f"현재 영화 개수: {count}")
             
             # 영화 상세 정보 추출 (최신순으로 정렬됨)
             movies = []
@@ -94,7 +93,6 @@ class MovieMonitor:
                     'rcv_no': rcv_no
                 })
             
-            self.log(f"HTML에서 추출된 총 개수: {count}개, 파싱된 영화: {len(movies)}개")
             # HTML에서 추출한 실제 개수를 반환 (페이지네이션 고려)
             return count, movies
             
