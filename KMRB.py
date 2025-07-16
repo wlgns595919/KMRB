@@ -213,8 +213,8 @@ class MovieMonitor:
                     self.TARGET_COUNT = current_count
                     self.log(f"기준 개수를 {self.TARGET_COUNT}개로 업데이트")
                 else:
-                    current_time = datetime.now().strftime("%H시 %M분 %S초")
-                    self.log(f"{current_time} - 변화 없음 ({current_count}개)")
+                    current_time = datetime.now().strftime("%H:%M")
+                    print(f"{current_time} - 변화 없음 ({current_count}개)", flush=True)
                 
                 # 1분 대기
                 time.sleep(60)
