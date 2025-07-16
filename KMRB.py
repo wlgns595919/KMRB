@@ -244,6 +244,11 @@ def home():
 def status():
     return "모니터링 활성화"
 
+@app.route('/ping')
+def ping():
+    """Health check endpoint for keeping the service alive"""
+    return {"status": "ok", "timestamp": datetime.now().isoformat()}
+
 def run_monitor():
     """백그라운드에서 영화 모니터링 실행"""
     monitor = MovieMonitor()
